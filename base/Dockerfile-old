@@ -1,0 +1,174 @@
+# ---------------------------------
+# Image: taccsciapps/jupyteruser-ds
+# ---------------------------------
+# The user notebook image for the TACC DesignSage JupyterHub.
+#
+# ------------------
+# Building the image
+# ------------------
+# To build this image, simply change into this directory and issue:
+# docker build -t taccsciapps/jupyteruser-ds:<some_tag> .
+#
+# Tags follow semantic versioning based on the CHANGELOG. When building new versions, always start with a release
+# candidate for the image tag; for example:
+# docker build -t taccsciapps/jupyteruser-ds:1.1.0-rc1 .
+#
+# ---------------
+# Running Locally
+# ---------------
+# After building a release candidate, run it locally to test out your changes.
+# This image is built to run on the JupyterHub. In order to run it locally, you need to provide a config file and a
+# separate command. For example, change into this directory and run:
+# docker run --rm -p 8888:8888 -v $(pwd)/jupyter-notebook-localconf.py:/home/jupyter/.jupyter/jupyter_notebook_config.py taccsciapps/jupyteruser-ds start-notebook.sh
+# Note than an example of a jupyter-notebook-localconf.py file is provided in this directory.
+
+FROM taccsciapps/jupyteruser-base:0.1.8
+
+USER root
+###################################################################
+# record version in /etc - image_version is injected by build_jupyteruser.sh
+###################################################################
+ARG image_version=test
+# RUN echo "${image_version}" > /etc/jupyteruser-ds-release
+# RUN chmod a+r /etc/jupyteruser-base-release
+###################################################################
+
+# -------
+# DS Apps
+# -------
+
+# opensees
+COPY ./OpenSees-deb-2.5.0.6482 /usr/local/bin/OpenSees
+RUN chmod 755 /usr/local/bin/OpenSees
+
+# obspy
+RUN apt-get update && apt-get install -y libxml2 libxml2-dev libxslt1-dev
+RUN conda install --quiet --yes SIP qt pyqt lxml
+RUN conda install -c conda-forge/label/gcc7 obspy
+RUN conda install --quiet --yes -n python2 SIP qt pyqt lxml
+# RUN conda install -c -n python2 conda-forge/label/gcc7 obspy
+RUN conda clean -tipsy
+RUN conda config --add channels conda-forge
+
+#RUN apt-get install -y libxml2 libxml2-dev libxslt1-dev python-lxml python-numexpr
+RUN echo "allowed_users=anybody" > /etc/X11/Xwrapper.config
+
+# -----------
+# GeoClaw / Clawpack - conda not recommended
+# -----------
+RUN pip install --no-cache-dir --src=/home/jupyter/util/clawpack_src -e git+https://github.com/clawpack/clawpack.git@v5.4.1#egg=clawpack-v5.4.1
+RUN pip2 install --no-cache-dir --src=/home/jupyter/util/clawpack_src -e git+https://github.com/clawpack/clawpack.git@v5.4.1#egg=clawpack-v5.4.1
+USER jupyter
+ENV CLAW=/home/jupyter/util/clawpack_src/clawpack-v5.4.1
+ENV FC=gfortran
+
+
+USER root
+# Install extra packages
+RUN conda install -c conda-forge cartopy
+RUN pip install pymongo
+RUN pip install fiona
+# RUN conda install h5py
+# RUN git clone https://github.com/Unidata/netcdf4-python.git && cd netcdf4-python && python setup.py build && python setup.py install
+RUN pip install simplekml
+RUN pip install netCDF4
+RUN R -e "install.packages('geotech', repos = 'http://cran.us.r-project.org')"
+RUN pip2 install pymongo==3.6.1
+RUN conda install -c conda-forge bqplot
+RUN conda install -c conda-forge gdal
+RUN pip3 install folium mysql-connector bqplot  --user
+RUN pip3 install openseespy==3.1.5.12
+RUN pip3 install qgrid
+RUN pip install qgrid
+RUN pip2 install qgrid
+RUN jupyter nbextension enable --py --sys-prefix qgrid
+RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
+RUN pip install holoviews
+RUN pip install panel
+RUN pip install pykrige
+RUN conda install -c conda-forge proj4
+RUN conda install -c conda-forge basemap
+RUN pip3 install xgboost
+# Install agavepy
+RUN pip3 install agavepy==0.9.3
+RUN pip2 install agavepy==0.9.3
+RUN pip install agavepy==0.9.3
+# Opensees
+RUN apt-get -y update && \
+        apt-get -y install \
+        subversion emacs make tcl8.6 tcl8.6-dev \
+        gcc g++ gfortran mpich vim && \
+        apt-get clean
+COPY ngl_db /opt/ngl_db
+RUN pip install /opt/ngl_db
+
+# examples
+USER jupyter
+RUN mkdir -p /home/jupyter/util
+ADD agavepy_example.ipynb /home/jupyter/util/agavepy_example.ipynb
+ADD opensees-submit-example.ipynb /home/jupyter/util/opensees-submit-example.ipynb
+
+
+# startx and README
+RUN startx &
+RUN echo "Welcome to the DesignSafe-ci JupyterHub terminal. Your DesignSafe-ci home directory is in 'mydata.' Any files you wish to save between sessions must be within that directory. OpenSees is availavble to run interactively here. " > /home/jupyter/README.txt
+RUN echo "0949f6ce05b1" > /home/jupyter/.imageID
+COPY rbnb.jar /home/jupyter/util/rbnb.jar
+
+# ensure jupyter user owns its directory
+USER root
+
+RUN mkdir /home/jupyter/public
+
+RUN apt-get update && apt-get install -yq --no-install-recommends \
+    texlive-fonts-extra \
+    texlive-fonts-recommended \
+    texlive-generic-recommended \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-xetex \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN conda install -c conda-forge jupyterlab
+RUN jupyter serverextension enable --py jupyterlab --sys-prefix
+#  RUN jupyter labextension install @jupyterlab/hub-extension
+RUN pip install pdflatex
+RUN pip install geopandas
+RUN apt-get update && apt-get install -y libspatialindex-dev
+RUN pip install Rtree
+RUN ln -s /home/jupyter/MyProjects /home/jupyter/projects
+RUN ln -s /home/jupyter/MyData /home/jupyter/mydata
+RUN ln -s /home/jupyter/CommunityData /home/jupyter/community
+RUN ln -s /home/jupyter/NEES /home/jupyter/public/nees
+
+# RUN conda install --override-channels -c main -c conda-forge libiconv
+# RUN pip install AdcircPy
+RUN pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+COPY vp_db /opt/vp_db
+RUN pip install /opt/vp_db
+RUN pip install tensorflow
+RUN pip install Keras
+RUN pip install adcircpy
+RUN pip install opencv-python
+RUN pip install flake8
+RUN pip install tqdm
+RUN pip install requests==2.22.0
+RUN pip install adcircpy==1.0.16
+RUN pip install --upgrade --force-reinstall pyzmq
+RUN pip install pyomo
+RUN python -m pip install -i https://pypi.gurobi.com gurobipy
+RUN pip install geopandas
+RUN pip install networkx
+RUN pip install openseespy --upgrade
+RUN pip install dash==1.14.0
+RUN pip install hvsrpy && pip install swprepost
+RUN pip install pyomo
+
+COPY earthquake_recovery_db /opt/earthquake_recovery_db
+RUN pip install /opt/earthquake_recovery_db
+
+COPY actors.py /opt/conda/lib/python3.6/site-packages/agavepy
+
+RUN chown -R jupyter:G-816877 /home/jupyter
+
+USER jupyter
