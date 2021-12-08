@@ -1,48 +1,51 @@
-FROM python:3.9
+FROM ubuntu:20.04
 
 USER root
 
-# Jupyter GIDs
+# cmd line arguments
 ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
-# start_notebook.sh looks for these values
+
+# set for start_notebook.sh
+# TODO (jpv): Check if still use start_notebook.sh
 ENV NB_USER=jupyter \
     NB_GID=${AGAVE_GNAME} \
     NB_GROUP=${AGAVE_GNAME}
-   # SHELL=/bin/bash
 
-RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
-    useradd --uid 458981 --gid ${AGAVE_GNAME} -m --home /home/${NB_USER} --shell /bin/bash ${NB_USER}
-# While not ideal, this is required since the users that are injected
-# into the container do not exist.
-#ENV HOME=/home/${NB_USER} \
-#    USER=${NB_USER} \
-#    LC_ALL=en_US.UTF-8 \
- #   LANG=en_US.UTF-8 \
-#    LANGUAGE=en_US.UTF-8
+# create group -> use provided (or default) gid and gname
+RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME}
 
-RUN apt-get update && apt-get install -yq --no-install-recommends \
+# create user -> provide user id; add to gid; make home dir; set default shell; provide user name
+RUN useradd --uid 458981 --gid ${AGAVE_GNAME} -m --home /home/${NB_USER} --shell /bin/bash ${NB_USER}
+
+RUN apt-get update
+RUN apt-get install --yes --quiet --no-install-recommends \
     build-essential \
     emacs-nox \
     vim-tiny \
+    nano \
+    unzip \
     git \
     inkscape \
     jed \
     libsm6 \
     libxext-dev \
     libxrender1 \
+    libgl1-mesa-glx \
     lmodern \
     netcat \
-    python-dev \
     # ---- nbconvert dependencies ----
     texlive-xetex \
     texlive-fonts-recommended \
     texlive-plain-generic \
     # ----
     tzdata \
-    unzip \
-    nano \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get install software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update
+RUN apt-get install python3.9
 
 ###############################################
 # Persistent local jupyter kernels
@@ -66,21 +69,18 @@ RUN chown -R jupyter:${NB_GROUP} /home/jupyter && \
 ##################################################################
 RUN touch /home/jupyter/.hushlogin
 
-RUN apt update
-RUN apt install -y libgl1-mesa-glx
-
 ADD requirements.txt /home/jupyter/requirements.txt 
 
 RUN pip install -r /home/jupyter/requirements.txt
 
-RUN pip freeze > /home/jupyter/current_reqs.txt
+# RUN pip freeze > /home/jupyter/current_reqs.txt
 
-RUN apt-get -y update && apt-get install -y dvipng texlive-latex-extra texlive-fonts-recommended
+# RUN apt-get -y update && apt-get install -y dvipng texlive-latex-extra texlive-fonts-recommended
 
-RUN pip install git+https://github.com/Kitware/ipyparaview.git \
- && jupyter nbextension enable --py --sys-prefix ipyparaview
+# RUN pip install git+https://github.com/Kitware/ipyparaview.git \
+#  && jupyter nbextension enable --py --sys-prefix ipyparaview
 
-RUN chown jupyter /home/jovyan
+# RUN chown jupyter /home/jovyan
 
 RUN mkdir /home/jupyter/projects && \
     mkdir /home/jupyter/mydata && \
@@ -95,15 +95,15 @@ RUN ln -s /home/jupyter/NEES /home/jupyter/public/nees
 
 # startx and README
 RUN startx &
-RUN echo "Welcome to the DesignSafe-ci JupyterHub terminal. Your DesignSafe-ci home directory is in 'mydata.' Any files you wish to save between sessions must be within that directory. OpenSees is availavble to run interactively here. " > /home/jupyter/README.txt
-RUN echo "0949f6ce05b1" > /home/jupyter/.imageID
-COPY rbnb.jar /home/jupyter/util/rbnb.jar
+# RUN echo "Welcome to the DesignSafe-ci JupyterHub terminal. Your DesignSafe-ci home directory is in 'mydata.' Any files you wish to save between sessions must be within that directory. OpenSees is availavble to run interactively here. " > /home/jupyter/README.txt
+# RUN echo "0949f6ce05b1" > /home/jupyter/.imageID
+# COPY rbnb.jar /home/jupyter/util/rbnb.jar
 
-COPY actors.py /opt/conda/lib/python3.6/site-packages/agavepy
+# COPY actors.py /opt/conda/lib/python3.6/site-packages/agavepy
 
 USER jupyter
 
-# examples
-RUN mkdir -p /home/jupyter/util
-ADD agavepy_example.ipynb /home/jupyter/util/agavepy_example.ipynb
-ADD opensees-submit-example.ipynb /home/jupyter/util/opensees-submit-example.ipynb
+# # examples
+# RUN mkdir -p /home/jupyter/util
+# ADD agavepy_example.ipynb /home/jupyter/util/agavepy_example.ipynb
+# ADD opensees-submit-example.ipynb /home/jupyter/util/opensees-submit-example.ipynb
