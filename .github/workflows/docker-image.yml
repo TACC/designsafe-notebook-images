@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build py39 Docker image
+      run: docker build ./py39/ --file Dockerfile --tag jpvantassel/ds-nb-img:py39-0.1.0rc0
+    - name: Push to Docker Hub
+      run: docker push jpvantassel/ds-nb-img:py39-0.1.0rc0
