@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 USER root
 
-# cmd line arguments
+# cmd line arguments with defaults
 ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
 
@@ -19,33 +19,44 @@ RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME}
 RUN useradd --uid 458981 --gid ${AGAVE_GNAME} -m --home /home/${NB_USER} --shell /bin/bash ${NB_USER}
 
 RUN apt-get update
-RUN apt-get install --yes --quiet --no-install-recommends \
-    build-essential \
-    emacs-nox \
-    vim-tiny \
-    nano \
-    unzip \
-    git \
-    inkscape \
-    jed \
-    libsm6 \
-    libxext-dev \
-    libxrender1 \
-    libgl1-mesa-glx \
-    lmodern \
-    netcat \
-    # ---- nbconvert dependencies ----
-    texlive-xetex \
-    texlive-fonts-recommended \
-    texlive-plain-generic \
-    # ----
-    tzdata \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+#RUN apt-get install --yes --quiet --no-install-recommends \
+#    build-essential \
+#    emacs-nox \
+#    vim-tiny \
+#    nano \
+#    jed \
+#    unzip \
+#    git \
+#    inkscape
 
-RUN apt-get install software-properties-common
+#RUN apt-get install --yes --quiet --no-install-recommends \
+#    libsm6 \
+#    libxext-dev \
+#    libxrender1 \
+#    libgl1-mesa-glx \
+#    lmodern \
+#    netcat
+
+#RUN apt-get install --yes --quiet --no-install-recommends \
+#    # ---- nbconvert depesndencies ----
+#    texlive-xetex \
+#    texlive-fonts-recommended \
+#    texlive-plain-generic \
+#   # ----
+#    # tzdata # possibly took a very long time
+#    dvipng \
+#    texlive-latex-extra \
+#    texlive-fonts-recommended
+
+# install python3.9
+RUN apt-get install --yes --quiet --no-install-recommends software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
-RUN apt-get install python3.9
+RUN apt-get install --yes --quiet --no-install-recommends python3.9
+RUN apt-get install --yes --quiet --no-install-recommends python3-venv python3-pip
+
+# clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ###############################################
 # Persistent local jupyter kernels
@@ -71,16 +82,10 @@ RUN touch /home/jupyter/.hushlogin
 
 ADD requirements.txt /home/jupyter/requirements.txt 
 
-RUN pip install -r /home/jupyter/requirements.txt
-
-# RUN pip freeze > /home/jupyter/current_reqs.txt
-
-# RUN apt-get -y update && apt-get install -y dvipng texlive-latex-extra texlive-fonts-recommended
+RUN python3.9 -m pip install -r /home/jupyter/requirements.txt
 
 # RUN pip install git+https://github.com/Kitware/ipyparaview.git \
 #  && jupyter nbextension enable --py --sys-prefix ipyparaview
-
-# RUN chown jupyter /home/jovyan
 
 RUN mkdir /home/jupyter/projects && \
     mkdir /home/jupyter/mydata && \
@@ -95,8 +100,8 @@ RUN ln -s /home/jupyter/NEES /home/jupyter/public/nees
 
 # startx and README
 RUN startx &
-# RUN echo "Welcome to the DesignSafe-ci JupyterHub terminal. Your DesignSafe-ci home directory is in 'mydata.' Any files you wish to save between sessions must be within that directory. OpenSees is availavble to run interactively here. " > /home/jupyter/README.txt
-# RUN echo "0949f6ce05b1" > /home/jupyter/.imageID
+RUN echo "Welcome to the DesignSafe-ci JupyterHub terminal. Your DesignSafe-ci home directory is in 'mydata'. Any files you wish to save between sessions must be within that directory. OpenSees is availavble to run interactively here. " > /home/jupyter/README.txt
+RUN echo "0949f6ce05b1" > /home/jupyter/.imageID
 # COPY rbnb.jar /home/jupyter/util/rbnb.jar
 
 # COPY actors.py /opt/conda/lib/python3.6/site-packages/agavepy
