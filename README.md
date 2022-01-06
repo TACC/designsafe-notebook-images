@@ -22,10 +22,10 @@ docker build ./nbase/ -t jpvantassel/ds-nb-img:nbase-0.1.0rc0
 #### Local
 
 ```bash
-docker run --rm -p 8888:8888 <user>/<repo>:<tag> --user=jovyan
+docker run --rm -p 8888:8888 --user=jovyan <user>/<repo>:<tag>
 
 # for example
-docker run --rm -p 8888:8888 jpvantassel/ds-nb-img:nbase-0.1.0rc0 --user=jovyan
+docker run --rm -p 8888:8888 --user=jovyan jpvantassel/ds-nb-img:nbase-0.1.0rc0 
 ``` 
 
 #### Remote - Test
