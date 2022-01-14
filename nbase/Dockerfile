@@ -11,8 +11,8 @@ USER root
 RUN apt-get update
 
 # The notebooks (NB) group (G) and user (U) information.
-ENV AGAVE_GID=816877
-ENV AGAVE_GNAME=G-${AGAVE_GID}
+ARG AGAVE_GID=816877
+ARG AGAVE_GNAME=G-${AGAVE_GID}
 ENV NB_USER="jupyter"
 ENV NB_UID="558981"
 ENV NB_GID=${AGAVE_GID}
@@ -53,7 +53,15 @@ RUN apt-get install --yes --quiet --no-install-recommends \
 # from apt-get man: "Clears out the local repository of retrieved package files."
 RUN apt-get clean
 
-RUN touch /home/jupyter/.hushlogin
+# The notebook is run by the TACC userid, not jupyter,
+# so permissions need to be open
+# TODO (jpv): Prevent blind application of permission.
+RUN chown -R ${NB_USER}:${NB_GROUP} /home/${NB_USER} && \
+	chmod 777 /home/${NB_USER} && \
+	find /home/${NB_USER} -type f -exec chmod 666 {} \; && \
+	find /home/${NB_USER} -type d -exec chmod 777 {} \;
+
+RUN touch /home/${NB_USER}/.hushlogin
 
 ADD requirements.txt /home/${NB_USER}/requirements.txt
 
