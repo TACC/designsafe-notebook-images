@@ -8,17 +8,15 @@ LABEL maintainer="Joseph P. Vantassel <jpvantassel@tacc.utexas.edu>"
 
 USER root
 
-RUN apt-get update
-
 # The notebooks (NB) group (G) and user (U) information.
 ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
 ARG NB_USER="jupyter"
-ARG NB_UID="55891"
+ARG NB_UID="458981"
 
 # Configure enviroment
 ENV NB_USER=${NB_USER} \
-    NB_UID="558981" \
+    NB_UID="458981" \
     NB_GID=${AGAVE_GID} \
     NB_GROUP=${AGAVE_GNAME} \
     HOME="/home/${NB_USER}"
@@ -27,7 +25,9 @@ ENV NB_USER=${NB_USER} \
 # Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile
 RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
     adduser --uid ${NB_UID} --ingroup ${AGAVE_GNAME} --home /home/${NB_USER} --shell /bin/bash ${NB_USER}
-    
+
+WORKDIR /home/${NB_USER}/
+
 # Cannot delete default user jovyan.
 # If jovyan is deleted container will not run.
 # Why this is the case is unclear.
@@ -35,7 +35,11 @@ RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
 
 USER ${NB_USER}
 
+WORKDIR /home/${NB_USER}/
+
 USER root
+
+RUN apt-get update
 
 # Install bare essentials to make the image usable.
 # This list is kept short on purpose to keep the image light and portable.
@@ -111,4 +115,3 @@ RUN python -m pip install -r /home/${NB_USER}/requirements.txt --no-cache-dir &&
 
 # Always terinate with user (i.e., non-root) permissions.
 USER ${NB_USER}
-WORKDIR /home/${NB_USER}/
