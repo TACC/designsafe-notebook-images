@@ -13,10 +13,15 @@ RUN apt-get update
 # The notebooks (NB) group (G) and user (U) information.
 ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
-ENV NB_USER="jupyter"
-ENV NB_UID="558981"
-ENV NB_GID=${AGAVE_GID}
-ENV NB_GROUP=${AGAVE_GNAME}
+ARG NB_USER="jupyter"
+ARG NB_UID="55891"
+
+# Configure enviroment
+ENV NB_USER=${NB_USER} \
+    NB_UID="558981" \
+    NB_GID=${AGAVE_GID} \
+    NB_GROUP=${AGAVE_GNAME} \
+    HOME="/home/${NB_USER}"
 
 # Add jupyter user
 # Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile
@@ -29,13 +34,8 @@ RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
     # userdel -r jovyan
 
 USER ${NB_USER}
-ENV HOME /home/${NB_USER}
-# ENV SHELL /bin/bash
-# ENV USER ${NB_USER}
 
 USER root
-
-WORKDIR /home/${NB_USER}/
 
 # Install bare essentials to make the image usable.
 # This list is kept short on purpose to keep the image light and portable.
@@ -111,3 +111,4 @@ RUN python -m pip install -r /home/${NB_USER}/requirements.txt --no-cache-dir &&
 
 # Always terinate with user (i.e., non-root) permissions.
 USER ${NB_USER}
+WORKDIR /home/${NB_USER}/
