@@ -1,115 +1,80 @@
-FROM jupyter/scipy-notebook
+# Use jupyter/base-notebook image see:
+# https://github.com/jupyter/docker-stacks/tree/master/base-notebook
+FROM jupyter/base-notebook
+
+# Image metadata.
+LABEL image_name="jpvantasel/ds-nb-img:base-0.1.0rc0"
+LABEL maintainer="Joseph P. Vantassel <jpvantassel@tacc.utexas.edu>"
 
 USER root
 
-# Jupyter GIDs
+# The notebooks (NB) group (G) and user (U) information.
 ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
-# start_notebook.sh looks for these values
-ENV NB_USER=jupyter \
-    NB_GID=${AGAVE_GNAME} \
-    NB_GROUP=${AGAVE_GNAME}
-   # SHELL=/bin/bash
+ARG NB_USER=jupyter
+ARG NB_UID=458981
 
+# Configure enviroment
+ENV NB_GID=${AGAVE_GID} \
+    NB_GROUP=${AGAVE_GNAME} \
+    NB_USER=${NB_USER} \
+    NB_UID=${NB_UID} \
+    HOME=/home/${NB_USER}
+
+# Add jupyter user
+# Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile
 RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
-    useradd --uid 458981 --gid ${AGAVE_GNAME} -m --home /home/${NB_USER} --shell /bin/bash ${NB_USER}
-# While not ideal, this is required since the users that are injected
-# into the container do not exist.
-#ENV HOME=/home/${NB_USER} \
-#    USER=${NB_USER} \
-#    LC_ALL=en_US.UTF-8 \
- #   LANG=en_US.UTF-8 \
-#    LANGUAGE=en_US.UTF-8
+    adduser --uid ${NB_UID} --ingroup ${AGAVE_GNAME} --home ${HOME} --shell /bin/bash ${NB_USER}
 
-RUN apt-get update && apt-get install -yq --no-install-recommends \
-    build-essential \
-    emacs-nox \
-    vim-tiny \
-    git \
-    inkscape \
-    jed \
-    libsm6 \
-    libxext-dev \
-    libxrender1 \
-    lmodern \
-    netcat \
-    python-dev \
-    # ---- nbconvert dependencies ----
-    texlive-xetex \
-    texlive-fonts-recommended \
-    texlive-plain-generic \
-    # ----
-    tzdata \
-    unzip \
-    nano \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR ${HOME}
 
-###############################################
-# Persistent local jupyter kernels
-###############################################
-# $LOCAL_ENVS/tmnt/bin/python -m ipykernel install --prefix $JUPYTER_WORK --name tmnt --display-name "tmnt python"
-#  *Must use full path*
-# refresh main jupyter to load the new kernel option
-#ENV JUPYTER_PATH=/home/jupyter/mydata/jupyter_packages/share/jupyter:$JUPYTER_PATH
-#ENV JUPYTER_WORK=/home/jupyter/mydata/jupyter_packages
-###############################################
-# Permissions
-###############################################
+
+USER ${NB_USER}
+
+WORKDIR ${HOME}
+
+USER root
+
+RUN apt-get update
+
+# Install bare essentials to make the image usable.
+# This list is kept short on purpose to keep the image light and portable.
+# Future packages should be added only if they are deemed essential for the community.
+RUN apt-get install --yes --quiet --no-install-recommends \
+   build-essential \
+   emacs-nox \
+   vim-tiny \
+   nano \
+   jed \
+   unzip \
+   git \
+   inkscape
+
+# from apt-get man: "Clears out the local repository of retrieved package files."
+RUN apt-get clean
+
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
-RUN chown -R jupyter:${NB_GROUP} /home/jupyter && \
-	chmod 777 /home/jupyter && \
-	find /home/jupyter -type f -exec chmod 666 {} \; && \
-	find /home/jupyter -type d -exec chmod 777 {} \;
-##################################################################
-# Turn off errors from login since gid does not exist in container
-##################################################################
-RUN touch /home/jupyter/.hushlogin
+# TODO (jpv): Prevent blind application of permission.
+RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
+	chmod 777 ${HOME} && \
+	find ${HOME} -type f -exec chmod 666 {} \; && \
+	find ${HOME} -type d -exec chmod 777 {} \;
 
-RUN apt update
-RUN apt install -y libgl1-mesa-glx
+RUN touch ${HOME}/.hushlogin
 
-RUN pip install numpy==1.19.1
-RUN pip install scipy==1.5.2
-RUN pip install agavepy==1.0.0a10
-RUN pip install matplotlib==3.3.1
-RUN pip install pandas==1.1.2
-RUN pip install itk==5.1.1
-RUN pip install itkwidgets==0.32.0
-RUN pip install vtk
-RUN pip install adcircpy==1.0.12
-RUN pip install openseespy==3.3.0.1.1
+ADD requirements.txt ${HOME}/requirements.txt
 
-RUN apt-get -y update && apt-get install -y dvipng texlive-latex-extra texlive-fonts-recommended
+RUN python -m pip install -r ${HOME}/requirements.txt --no-cache-dir && \
+    python -m pip freeze > ${HOME}/pip_freeze.txt
 
-RUN pip install git+https://github.com/Kitware/ipyparaview.git \
- && jupyter nbextension enable --py --sys-prefix ipyparaview
+# Cannot delete default user jovyan.
+# If jovyan is deleted container will not run.
+# Why this is the case is unclear.
+# RUN userdel -rf jovyan
 
-RUN chown jupyter /home/jovyan
+# Instead delete jovyan's home directory.
+RUN rm -rf home/jovyan
 
-RUN mkdir /home/jupyter/projects && \
-    mkdir /home/jupyter/mydata && \
-    mkdir /home/jupyter/community && \
-    mkdir /home/jupyter/public && \
-    mkdir /home/jupyter/public/nees
-
-RUN ln -s /home/jupyter/MyProjects /home/jupyter/projects
-RUN ln -s /home/jupyter/MyData /home/jupyter/mydata
-RUN ln -s /home/jupyter/CommunityData /home/jupyter/community
-RUN ln -s /home/jupyter/NEES /home/jupyter/public/nees
-
-# startx and README
-RUN startx &
-RUN echo "Welcome to the DesignSafe-ci JupyterHub terminal. Your DesignSafe-ci home directory is in 'mydata.' Any files you wish to save between sessions must be within that directory. OpenSees is availavble to run interactively here. " > /home/jupyter/README.txt
-RUN echo "0949f6ce05b1" > /home/jupyter/.imageID
-COPY rbnb.jar /home/jupyter/util/rbnb.jar
-
-COPY actors.py /opt/conda/lib/python3.6/site-packages/agavepy
-
-
-USER jupyter
-
-# examples
-RUN mkdir -p /home/jupyter/util
-ADD agavepy_example.ipynb /home/jupyter/util/agavepy_example.ipynb
-ADD opensees-submit-example.ipynb /home/jupyter/util/opensees-submit-example.ipynb
+# Always terinate with user (i.e., non-root) permissions.
+USER ${NB_USER}
