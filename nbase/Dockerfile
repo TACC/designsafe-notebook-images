@@ -11,31 +11,27 @@ USER root
 # The notebooks (NB) group (G) and user (U) information.
 ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
-ARG NB_USER="jupyter"
-ARG NB_UID="458981"
+ARG NB_USER=jupyter
+ARG NB_UID=458981
 
 # Configure enviroment
-ENV NB_USER=${NB_USER} \
-    NB_UID="458981" \
-    NB_GID=${AGAVE_GID} \
+ENV NB_GID=${AGAVE_GID} \
     NB_GROUP=${AGAVE_GNAME} \
-    HOME="/home/${NB_USER}"
+    NB_USER=${NB_USER} \
+    NB_UID=${NB_UID} \
+    HOME=/home/${NB_USER}
 
 # Add jupyter user
 # Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile
 RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
-    adduser --uid ${NB_UID} --ingroup ${AGAVE_GNAME} --home /home/${NB_USER} --shell /bin/bash ${NB_USER}
+    adduser --uid ${NB_UID} --ingroup ${AGAVE_GNAME} --home ${HOME} --shell /bin/bash ${NB_USER}
 
-WORKDIR /home/${NB_USER}/
+WORKDIR ${HOME}
 
-# Cannot delete default user jovyan.
-# If jovyan is deleted container will not run.
-# Why this is the case is unclear.
-    # userdel -r jovyan
 
 USER ${NB_USER}
 
-WORKDIR /home/${NB_USER}/
+WORKDIR ${HOME}
 
 USER root
 
@@ -60,17 +56,17 @@ RUN apt-get clean
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
 # TODO (jpv): Prevent blind application of permission.
-RUN chown -R ${NB_USER}:${NB_GROUP} /home/${NB_USER} && \
-	chmod 777 /home/${NB_USER} && \
-	find /home/${NB_USER} -type f -exec chmod 666 {} \; && \
-	find /home/${NB_USER} -type d -exec chmod 777 {} \;
+RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
+	chmod 777 ${HOME} && \
+	find ${HOME} -type f -exec chmod 666 {} \; && \
+	find ${HOME} -type d -exec chmod 777 {} \;
 
-RUN touch /home/${NB_USER}/.hushlogin
+RUN touch ${HOME}/.hushlogin
 
-ADD requirements.txt /home/${NB_USER}/requirements.txt
+ADD requirements.txt ${HOME}/requirements.txt
 
-RUN python -m pip install -r /home/${NB_USER}/requirements.txt --no-cache-dir && \
-    python -m pip freeze > /home/${NB_USER}/pip_freeze.txt
+RUN python -m pip install -r ${HOME}/requirements.txt --no-cache-dir && \
+    python -m pip freeze > ${HOME}/pip_freeze.txt
 
 # broken PermissionError: [Errno 13] Permission denied: '/home/jovyan/.local'
 # RUN chown jupyter /home/jovyan
@@ -112,6 +108,15 @@ RUN python -m pip install -r /home/${NB_USER}/requirements.txt --no-cache-dir &&
 
 # RUN chown -R ${NB_USER}:${AGAVE_GNAME} /home/${NB_USER}
 # RUN chown -R jupyter: /home/jupyter/util
+
+
+# Cannot delete default user jovyan.
+# If jovyan is deleted container will not run.
+# Why this is the case is unclear.
+# RUN userdel -rf jovyan
+
+# Instead delete jovyan's home directory.
+RUN rm -rf home/jovyan
 
 # Always terinate with user (i.e., non-root) permissions.
 USER ${NB_USER}
