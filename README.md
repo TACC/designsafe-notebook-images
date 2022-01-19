@@ -13,7 +13,7 @@ The projects organization is such that each folder includes a different notebook
 docker build ./<dir>/ -t <user>/<repo>:<tag>
 
 # for example
-docker build ./nbase/ -t jpvantassel/ds-nb-img:nbase-0.1.0-rc.0
+docker build ./base/ -t jpvantassel/ds-nb-img:base-0.1.0-rc.0
 ```
 
 ### Push
@@ -22,7 +22,7 @@ docker build ./nbase/ -t jpvantassel/ds-nb-img:nbase-0.1.0-rc.0
 docker push <user>/<repo>:<tag>
 
 # for example
-docker push jpvantassel/ds-nb-img:nbase-0.1.0-rc.0
+docker push jpvantassel/ds-nb-img:base-0.1.0-rc.0
 ```
 
 ### Run
@@ -33,7 +33,7 @@ docker push jpvantassel/ds-nb-img:nbase-0.1.0-rc.0
 docker run --rm -p 8888:8888 --user=jovyan <user>/<repo>:<tag>
 
 # for example
-docker run --rm -p 8888:8888 --user=1824 jpvantassel/ds-nb-img:nbase-0.1.0-rc.0 
+docker run --rm -p 8888:8888 --user=1824 jpvantassel/ds-nb-img:base-0.1.0-rc.0 
 ``` 
 
 #### Remote - Test
