@@ -18,4 +18,4 @@ jobs:
 
     # TODO (jpv): Set this up to automatically build all images.
     - name: Build Docker Image
-      run: docker build ./base/ --tag jpvantassel/ds-nb-img:nbase-test
+      run: docker build ./base/ --tag jpvantassel/ds-nb-img:base-test

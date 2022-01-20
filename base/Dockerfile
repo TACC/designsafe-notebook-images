@@ -1,10 +1,10 @@
 # Use jupyter/base-notebook image see:
 # https://github.com/jupyter/docker-stacks/tree/master/base-notebook
-FROM jupyter/base-notebook
+FROM jupyter/base-notebook:latest
 
 # Image metadata.
-LABEL image_name="jpvantasel/ds-nb-img:base-0.1.0rc0"
-LABEL maintainer="Joseph P. Vantassel <jpvantassel@tacc.utexas.edu>"
+LABEL image_name="jpvantasel/ds-nb-img:base-0.1.0-rc.0"
+LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
 
 USER root
 
@@ -13,13 +13,14 @@ ARG AGAVE_GID=816877
 ARG AGAVE_GNAME=G-${AGAVE_GID}
 ARG NB_USER=jupyter
 ARG NB_UID=458981
+ARG HOME=/home/${NB_USER}
 
 # Configure enviroment
 ENV NB_GID=${AGAVE_GID} \
     NB_GROUP=${AGAVE_GNAME} \
     NB_USER=${NB_USER} \
     NB_UID=${NB_UID} \
-    HOME=/home/${NB_USER}
+    HOME=${HOME}
 
 # Add jupyter user
 # Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile

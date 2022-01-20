@@ -30,7 +30,7 @@ docker push jpvantassel/ds-nb-img:base-0.1.0-rc.0
 #### Local
 
 ```bash
-docker run --rm -p 8888:8888 --user=jovyan -e JUPYTER_ENABLE_LAB <user>/<repo>:<tag>
+docker run --rm -p 8888:8888 --user=jovyan -e JUPYTER_ENABLE_LAB=yes <user>/<repo>:<tag>
 
 # for example
 docker run --rm -p 8888:8888 --user=1824 -e JUPYTER_ENABLE_LAB jpvantassel/ds-nb-img:base-0.1.0-rc.0 
