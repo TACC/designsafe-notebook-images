@@ -1,0 +1,21 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # TODO (jpv): Set this up to automatically build all images.
+    - name: Build Docker Image
+      run: docker build ./base/ --tag jpvantassel/ds-nb-img:nbase-test
