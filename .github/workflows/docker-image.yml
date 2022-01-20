@@ -13,8 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Build py39 Docker image
-      run: docker build py39 --file py39/Dockerfile --tag jpvantassel/ds-nb-img:py39-0.1.0rc0
-    - name: Push to Docker Hub
-      run: docker push jpvantassel/ds-nb-img:py39-0.1.0rc0
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # TODO (jpv): Set this up to automatically build all images.
+    - name: Build Docker Image
+      run: docker build ./base/ --tag jpvantassel/ds-nb-img:nbase-test
