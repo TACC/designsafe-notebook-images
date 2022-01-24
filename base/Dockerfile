@@ -1,3 +1,10 @@
+# The notebooks (NB) group (G) and user (U) information.
+ARG AGAVE_GID=816877
+ARG AGAVE_GNAME=G-${AGAVE_GID}
+ARG NB_USER=jupyter
+ARG NB_UID=458981
+ARG HOME=/home/${NB_USER}
+
 # Use jupyter/base-notebook image see:
 # https://github.com/jupyter/docker-stacks/tree/master/base-notebook
 FROM jupyter/base-notebook:latest
@@ -8,12 +15,12 @@ LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
 
 USER root
 
-# The notebooks (NB) group (G) and user (U) information.
-ARG AGAVE_GID=816877
-ARG AGAVE_GNAME=G-${AGAVE_GID}
-ARG NB_USER=jupyter
-ARG NB_UID=458981
-ARG HOME=/home/${NB_USER}
+# Recall ARGs after they go out of scope folling build stage (i.e., FROM).
+ARG AGAVE_GID
+ARG AGAVE_GNAME
+ARG NB_USER
+ARG NB_UID
+ARG HOME
 
 # Configure enviroment
 ENV NB_GID=${AGAVE_GID} \
@@ -29,30 +36,28 @@ RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
 
 WORKDIR ${HOME}
 
-
 USER ${NB_USER}
 
 WORKDIR ${HOME}
 
 USER root
 
-RUN apt-get update
-
 # Install bare essentials to make the image usable.
 # This list is kept short on purpose to keep the image light and portable.
 # Future packages should be added only if they are deemed essential for the community.
-RUN apt-get install --yes --quiet --no-install-recommends \
-   build-essential \
-   emacs-nox \
-   vim-tiny \
-   nano \
-   jed \
-   unzip \
-   git \
-   inkscape
-
-# from apt-get man: "Clears out the local repository of retrieved package files."
-RUN apt-get clean
+# Following best practices apt-get-related commands should not be split.
+RUN apt-get update \
+ && apt-get install --yes --quiet --no-install-recommends \
+    build-essential \
+    emacs-nox \
+    vim-tiny \
+    nano \
+    jed \
+    unzip \
+    git \
+    inkscape \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
@@ -64,7 +69,7 @@ RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
 
 RUN touch ${HOME}/.hushlogin
 
-ADD requirements.txt ${HOME}/requirements.txt
+COPY requirements.txt ${HOME}/requirements.txt
 
 RUN python -m pip install -r ${HOME}/requirements.txt --no-cache-dir && \
     python -m pip freeze > ${HOME}/pip_freeze.txt
@@ -75,7 +80,7 @@ RUN python -m pip install -r ${HOME}/requirements.txt --no-cache-dir && \
 # RUN userdel -rf jovyan
 
 # Instead delete jovyan's home directory.
-RUN rm -rf home/jovyan
+#RUN rm -rf home/jovyan
 
 # Always terinate with user (i.e., non-root) permissions.
 USER ${NB_USER}
