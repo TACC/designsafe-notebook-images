@@ -1,9 +1,9 @@
-# The notebooks (NB) group (G) and user (U) information.
-ARG AGAVE_GID=816877
-ARG AGAVE_GNAME=G-${AGAVE_GID}
-ARG NB_USER=jupyter
-ARG NB_UID=458981
-ARG HOME=/home/${NB_USER}
+# # The notebooks (NB) group (G) and user (U) information.
+# ARG AGAVE_GID=816877
+# ARG AGAVE_GNAME=G-${AGAVE_GID}
+# ARG NB_USER=jupyter
+# ARG NB_UID=458981
+# ARG HOME=/home/${NB_USER}
 
 # Use jupyter/base-notebook image see:
 # https://github.com/jupyter/docker-stacks/tree/master/base-notebook
@@ -15,19 +15,25 @@ LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
 
 USER root
 
-# Recall ARGs after they go out of scope folling build stage (i.e., FROM).
-ARG AGAVE_GID
-ARG AGAVE_GNAME
-ARG NB_USER
-ARG NB_UID
-ARG HOME
+# # Recall ARGs after they go out of scope folling build stage (i.e., FROM).
+# ARG AGAVE_GID
+# ARG AGAVE_GNAME
+# ARG NB_USER
+# ARG NB_UID
+# ARG HOME
 
-# Configure enviroment
-ENV NB_GID=${AGAVE_GID} \
-    NB_GROUP=${AGAVE_GNAME} \
-    NB_USER=${NB_USER} \
-    NB_UID=${NB_UID} \
-    HOME=${HOME}
+# # Configure enviroment
+# ENV NB_GID=${AGAVE_GID} \
+#     NB_GROUP=${AGAVE_GNAME} \
+#     NB_USER=${NB_USER} \
+#     NB_UID=${NB_UID} \
+#     HOME=${HOME}
+
+ENV AGAVE_GID=816877
+ENV AGAVE_GNAME=G-${AGAVE_GID}
+ENV NB_USER=jupyter
+ENV NB_UID=458981
+ENV HOME=/home/${NB_USER}
 
 # Add jupyter user
 # Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile
