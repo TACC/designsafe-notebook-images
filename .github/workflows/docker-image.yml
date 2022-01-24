@@ -2,9 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main, jpv-dev, dev ]
 
 jobs:
 
@@ -18,4 +16,4 @@ jobs:
 
     # TODO (jpv): Set this up to automatically build all images.
     - name: Build Docker Image
-      run: docker build ./base/ --tag jpvantassel/ds-nb-img:base-test
+      run: docker build ./base/ --no-cache=true --tag jpvantassel/ds-nb-img:base-test
