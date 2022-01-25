@@ -18,7 +18,11 @@ jobs:
       run: echo "image_name=`grep -E "LABEL image_name=" ./base/Dockerfile | sed 's/^LABEL image_name=\"\([^ ]*\)\"/\1/'`" >> $GITHUB_ENV
 
     - name: Build Docker Image (base)
-      run: docker build ./base/ --no-cache=true --tag "${{env.image_name}}"
+      run: |
+        echo ${{env.image_name}}
+        docker build ./base/ --no-cache=true --tag ${{env.image_name}}
     
     - name: Push Docker Image (base)
-      run: docker push --tag "${{env.image_name}}"
+      run: |
+        echo ${{env.image_name}}
+        docker push ${{env.image_name}}
