@@ -15,8 +15,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Get 
-      run: "image_name=`grep -E "LABEL image_name=" ./base/Dockerfile | sed 's/^LABEL image_name=\"\([^ ]*\)\"/\1/'`" >> $GITHUB_ENV
-
+      run: echo "image_name=`grep -E "LABEL image_name=" ./base/Dockerfile | sed 's/^LABEL image_name=\"\([^ ]*\)\"/\1/'`" >> $GITHUB_ENV
 
     - name: Build Docker Image (base)
       run: docker build ./base/ --no-cache=true --tag ${env.image_name}
