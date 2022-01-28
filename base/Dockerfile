@@ -3,7 +3,9 @@
 FROM jupyter/base-notebook:latest
 
 # Image metadata.
-LABEL image_name="jpvantasel/ds-nb-img:base-0.1.0-rc.1"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.1"
+LABEL image_name="jpvantasel/${IMAGE_NAME}"
+LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
 
 USER root
