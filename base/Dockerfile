@@ -46,7 +46,6 @@ RUN apt-get update \
 
 RUN touch ${HOME}/.hushlogin
 
-
 # Python requirements.
 RUN mkdir ${HOME}/.python
 COPY requirements.txt ${HOME}/.python/requirements.txt
@@ -85,28 +84,6 @@ RUN apt-get update \
  && jupyter labextension install @techrah/text-shortcuts \
  && rm install_script.r \
  && rm r-4.0.5_1_amd64.deb
-
-# Install R kernel from source.
-# RUN apt-get update \
-#  && apt-get build-dep r-base \
-#  && apt-get clean \
-#  && rm -rf /var/lib/apt/lists/* \
-#  && export R_VERSION=4.0.5 \
-#  && wget https://cran.rstudio.com/src/base/R-4/R-${R_VERSION}.tar.gz \
-#  && tar -xzf R-${R_VERSION}.tar.gz \
-#  && cd R-${R_VERSION} \
-#  && ./configure \
-#         --prefix=${HOME}/.r/${R_VERSION} \
-#         --enable-memory-profiling \
-#         --enable-R-shlib \
-#         --with-blas \
-#         --with-lapack \
-#  && make \
-#  && make install \
-#  && cd .. \
-#  && rm R-${R_VERSION}.tar.gz \
-#  && rm R-${R_VERSION} \
-#  export PATH:$PATH:${HOME}/.r/${R_VERSION}/bin
 
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
