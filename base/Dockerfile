@@ -3,7 +3,7 @@
 FROM jupyter/base-notebook:latest
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.1"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.2"
 LABEL image_name="jpvantasel/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
@@ -94,8 +94,9 @@ RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
 	chmod 777 ${HOME} && \
 	find ${HOME} -type f -exec chmod 666 {} \; && \
 	find ${HOME} -type d -exec chmod 777 {} \; && \
-    chmod -R a+rwx $HOME/.julia && \
-    chmod -R a+rwx /opt/R
+   chmod -R a+rwx $HOME/.julia && \
+   chmod -R a+rwx /opt/R && \
+   chmod -R a+rwx /opt/conda
 
 # Cannot delete default user jovyan.
 # If jovyan is deleted container will not run.
