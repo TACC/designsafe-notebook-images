@@ -88,6 +88,8 @@ RUN conda install -y nb_conda_kernels && \
     python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
     python -m pip freeze > ${HOME}/.python/pip_freeze.txt
 
+RUN jupyter kernelspec uninstall python3 -y
+
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
 # TODO (jpv): Prevent blind application of permission.
