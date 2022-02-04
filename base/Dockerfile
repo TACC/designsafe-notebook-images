@@ -85,7 +85,6 @@ RUN apt-get update \
 RUN mkdir ${HOME}/.python
 COPY requirements.txt ${HOME}/.python/requirements.txt
 RUN conda install -y nb_conda_kernels && \
-    jupyter kernelspec uninstall python3 && \
     python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
     python -m pip freeze > ${HOME}/.python/pip_freeze.txt
 
