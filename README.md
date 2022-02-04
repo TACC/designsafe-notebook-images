@@ -36,12 +36,6 @@ docker run --rm -p 8888:8888 --user=jovyan -e JUPYTER_ENABLE_LAB=yes <user>/<rep
 docker run --rm -p 8888:8888 --user=1824 -e JUPYTER_ENABLE_LAB jpvantassel/ds-nb-img:base-0.1.0-rc.0 
 ``` 
 
-#### Remote - Test
-
-See [admin portal](https://designsafe-dev-admin.io.jupyter.tacc.cloud/)
-
-#### Remote - Prod
-
 ## Notes
 
 [jupyter-base](https://github.com/jupyter/docker-stacks/blob/master/base-notebook/Dockerfile)
@@ -49,3 +43,4 @@ See [admin portal](https://designsafe-dev-admin.io.jupyter.tacc.cloud/)
 [designsafe-docker-gitlab](https://gitlab.tacc.utexas.edu/cic/jupyter/-/blob/master/notebooks/tenants/designsafe/Dockerfile)
 [running jupyter container](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/running.html#using-jupyterhub)
 [jpvantassel dockerhub](https://hub.docker.com/repository/docker/jpvantassel/)
+[admin portal](https://designsafe-dev-admin.io.jupyter.tacc.cloud/)
