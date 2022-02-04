@@ -85,6 +85,7 @@ RUN apt-get update \
 RUN mkdir ${HOME}/.python
 COPY requirements.txt ${HOME}/.python/requirements.txt
 RUN conda install -y nb_conda_kernels && \
+    jupyter kernelspec uninstall python3 && \
     python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
     python -m pip freeze > ${HOME}/.python/pip_freeze.txt
 
@@ -92,12 +93,12 @@ RUN conda install -y nb_conda_kernels && \
 # so permissions need to be open
 # TODO (jpv): Prevent blind application of permission.
 RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
-	chmod 777 ${HOME} && \
-	find ${HOME} -type f -exec chmod 666 {} \; && \
-	find ${HOME} -type d -exec chmod 777 {} \; && \
-   chmod -R a+rwx $HOME/.julia && \
-   chmod -R a+rwx /opt/R && \
-   chmod -R a+rwx /opt/conda
+	 chmod 777 ${HOME} && \
+	 find ${HOME} -type f -exec chmod 666 {} \; && \
+	 find ${HOME} -type d -exec chmod 777 {} \; && \
+    chmod -R a+rwx $HOME/.julia && \
+    chmod -R a+rwx /opt/R && \
+    chmod -R a+rwx /opt/conda
 
 # Cannot delete default user jovyan.
 # If jovyan is deleted container will not run.
