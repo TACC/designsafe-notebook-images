@@ -48,12 +48,6 @@ RUN apt-get update \
 
 RUN touch ${HOME}/.hushlogin
 
-# Python requirements.
-RUN mkdir ${HOME}/.python
-COPY requirements.txt ${HOME}/.python/requirements.txt
-RUN python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir \
- && python -m pip freeze > ${HOME}/.python/pip_freeze.txt
-
 # Install Julia kernel.
 RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.1-linux-x86_64.tar.gz \
  && tar zxf julia-1.7.1-linux-x86_64.tar.gz \
@@ -86,6 +80,13 @@ RUN apt-get update \
  && jupyter labextension install @techrah/text-shortcuts \
  && rm install_script.r \
  && rm r-4.0.5_1_amd64.deb
+
+# Python requirements.
+RUN mkdir ${HOME}/.python
+COPY requirements.txt ${HOME}/.python/requirements.txt
+RUN conda install -y nb_conda_kernels && \
+    python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
+    python -m pip freeze > ${HOME}/.python/pip_freeze.txt
 
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
