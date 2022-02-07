@@ -4,3 +4,4 @@ agavepy
 matplotlib
 pandas
 agavepy
+tapispy

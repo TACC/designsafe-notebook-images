@@ -3,7 +3,7 @@
 FROM jupyter/base-notebook:latest
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.1"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.2"
 LABEL image_name="jpvantasel/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
@@ -48,12 +48,6 @@ RUN apt-get update \
 
 RUN touch ${HOME}/.hushlogin
 
-# Python requirements.
-RUN mkdir ${HOME}/.python
-COPY requirements.txt ${HOME}/.python/requirements.txt
-RUN python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir \
- && python -m pip freeze > ${HOME}/.python/pip_freeze.txt
-
 # Install Julia kernel.
 RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.1-linux-x86_64.tar.gz \
  && tar zxf julia-1.7.1-linux-x86_64.tar.gz \
@@ -87,15 +81,25 @@ RUN apt-get update \
  && rm install_script.r \
  && rm r-4.0.5_1_amd64.deb
 
+# Python requirements.
+RUN mkdir ${HOME}/.python
+COPY requirements.txt ${HOME}/.python/requirements.txt
+RUN conda install -y nb_conda_kernels && \
+    python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
+    python -m pip freeze > ${HOME}/.python/pip_freeze.txt
+
+RUN jupyter kernelspec uninstall python3 -y
+
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
 # TODO (jpv): Prevent blind application of permission.
 RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
-	chmod 777 ${HOME} && \
-	find ${HOME} -type f -exec chmod 666 {} \; && \
-	find ${HOME} -type d -exec chmod 777 {} \; && \
+	 chmod 777 ${HOME} && \
+	 find ${HOME} -type f -exec chmod 666 {} \; && \
+	 find ${HOME} -type d -exec chmod 777 {} \; && \
     chmod -R a+rwx $HOME/.julia && \
-    chmod -R a+rwx /opt/R
+    chmod -R a+rwx /opt/R && \
+    chmod -R a+rwx /opt/conda
 
 # Cannot delete default user jovyan.
 # If jovyan is deleted container will not run.
