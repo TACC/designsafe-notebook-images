@@ -1,6 +1,5 @@
 numpy
 scipy
-agavepy
 matplotlib
 pandas
 agavepy
