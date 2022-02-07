@@ -4,3 +4,4 @@ matplotlib
 pandas
 agavepy
 tapispy
+tapis-cli
