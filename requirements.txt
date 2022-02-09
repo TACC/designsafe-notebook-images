@@ -1,7 +1,6 @@
 numpy
 scipy
-agavepy
 matplotlib
 pandas
 agavepy
-tapispy
+tapis-cli==1.0.5

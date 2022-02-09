@@ -3,7 +3,7 @@
 FROM jupyter/base-notebook:latest
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.2"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.3"
 LABEL image_name="jpvantasel/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
@@ -43,6 +43,7 @@ RUN apt-get update \
     unzip \
     git \
     inkscape \
+    openssh-client \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
