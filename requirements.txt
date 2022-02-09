@@ -3,5 +3,4 @@ scipy
 matplotlib
 pandas
 agavepy
-tapipy
 tapis-cli==1.0.5
