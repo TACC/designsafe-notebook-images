@@ -3,7 +3,7 @@
 FROM jupyter/base-notebook:latest
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.3"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.4"
 LABEL image_name="jpvantasel/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
@@ -90,6 +90,8 @@ RUN conda install -y nb_conda_kernels && \
     python -m pip freeze > ${HOME}/.python/pip_freeze.txt
 
 RUN jupyter kernelspec uninstall python3 -y
+
+COPY jupyter_notebook_config.py ${HOME}/.jupyter/jupyter_notebook_config.py
 
 # The notebook is run by the TACC userid, not jupyter,
 # so permissions need to be open
