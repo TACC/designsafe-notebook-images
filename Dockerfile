@@ -34,6 +34,8 @@ USER root
 # Future packages should be added only if they are deemed essential for the community.
 # Following best practices apt-get-related commands should not be split.
 RUN apt-get update \
+ && apt-get upgrade \
+ && apt-get clean \
  && apt-get install --yes --quiet --no-install-recommends \
     build-essential \
     emacs-nox \
@@ -45,11 +47,7 @@ RUN apt-get update \
     inkscape \
     openssh-client \
     texlive-latex-base \
-    texlive-fonts-recommended \
-    texlive-fonts-extra \
-    texlive-latex-extra \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get clean
 
 RUN touch ${HOME}/.hushlogin
 
@@ -87,13 +85,11 @@ RUN apt-get update \
  && rm r-4.0.5_1_amd64.deb
 
 # Python requirements.
-RUN mkdir ${HOME}/.python
 COPY requirements.txt ${HOME}/.python/requirements.txt
 RUN conda install -y nb_conda_kernels && \
     python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
-    python -m pip freeze > ${HOME}/.python/pip_freeze.txt
-
-RUN jupyter kernelspec uninstall python3 -y
+    python -m pip freeze > ${HOME}/.python/pip_freeze.txt && \
+    jupyter kernelspec uninstall python3 -y
 
 COPY jupyter_notebook_config.py ${HOME}/.jupyter/jupyter_notebook_config.py
 
