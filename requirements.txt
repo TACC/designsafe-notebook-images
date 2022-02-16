@@ -4,3 +4,4 @@ matplotlib
 pandas
 agavepy
 tapis-cli==1.0.5
+ipywidgets

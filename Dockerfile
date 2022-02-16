@@ -44,6 +44,10 @@ RUN apt-get update \
     git \
     inkscape \
     openssh-client \
+    texlive-latex-base \
+    texlive-fonts-recommended \
+    texlive-fonts-extra \
+    texlive-latex-extra \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
