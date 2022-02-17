@@ -10,10 +10,10 @@ The projects organization is such that each folder includes a different notebook
 ### Build
 
 ```bash
-docker build ./<dir>/ -t <user>/<repo>:<tag>
+docker build . -t <user>/<repo>:<tag>
 
 # for example
-docker build ./base/ -t jpvantassel/ds-nb-img:base-0.1.0-rc.0
+docker build . -t jpvantassel/ds-nb-img:base-0.1.0-rc.0
 ```
 
 ### Push
