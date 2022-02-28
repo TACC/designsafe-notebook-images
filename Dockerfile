@@ -3,7 +3,7 @@
 FROM jupyter/base-notebook:latest
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.5"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.0-rc.6"
 LABEL image_name="jpvantassel/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
@@ -46,7 +46,6 @@ RUN apt-get update \
     git \
     inkscape \
     openssh-client \
-    texlive-latex-base \
  && apt-get clean
 
 RUN touch ${HOME}/.hushlogin
@@ -103,6 +102,10 @@ RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
     chmod -R a+rwx $HOME/.julia && \
     chmod -R a+rwx /opt/R && \
     chmod -R a+rwx /opt/conda
+
+# Directory containing user's projects is current named `projects`.
+# Rename to be consistent with DesignSafe interface.
+RUN mv projects MyProjects
 
 # Cannot delete default user jovyan.
 # If jovyan is deleted container will not run.
