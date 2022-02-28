@@ -1378,7 +1378,7 @@ def scrub_output_pre_save(model, **kwargs):
     if model['content']['nbformat'] != 4:
         return
     model['content']['metadata']['IMAGE_NAME'] = os.environ.get("SCINCO_JUPYTERHUB_IMAGE", "Missing image env variable")
-    if not 'uuid' in model['content']['metadata']:
+    if not 'UUID' in model['content']['metadata']:
         model['content']['metadata']['UUID'] = str(uuid.uuid1())
 
 c.FileContentsManager.pre_save_hook = scrub_output_pre_save
