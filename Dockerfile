@@ -103,10 +103,6 @@ RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
     chmod -R a+rwx /opt/R && \
     chmod -R a+rwx /opt/conda
 
-# Directory containing user's projects is current named `projects`.
-# Rename to be consistent with DesignSafe interface.
-RUN mv projects MyProjects
-
 # Cannot delete default user jovyan.
 # If jovyan is deleted container will not run.
 # Why this is the case is unclear.
