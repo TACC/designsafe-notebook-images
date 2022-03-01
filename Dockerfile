@@ -34,8 +34,8 @@ USER root
 # Future packages should be added only if they are deemed essential for the community.
 # Following best practices apt-get-related commands should not be split.
 RUN apt-get update \
- && apt-get upgrade \
- && apt-get clean \
+ && apt-get upgrade --yes \
+ && apt-get clean --yes \
  && apt-get install --yes --quiet --no-install-recommends \
     build-essential \
     emacs-nox \
@@ -46,7 +46,7 @@ RUN apt-get update \
     git \
     inkscape \
     openssh-client \
- && apt-get clean
+ && apt-get clean --yes
 
 RUN touch ${HOME}/.hushlogin
 
