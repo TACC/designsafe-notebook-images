@@ -1,12 +1,12 @@
 # Use jupyter/base-notebook image see:
 # https://github.com/jupyter/docker-stacks/tree/master/base-notebook
-FROM jupyter/base-notebook:latest
+FROM taccsciapps/ds-nb-img:base-0.1.0
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.0"
-LABEL image_name="jpvantassel/${IMAGE_NAME}"
+ENV IMAGE_NAME="ds-nb-img:base-0.1.5"
+LABEL image_name="taccsciapps/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
-LABEL maintainer="Joseph P. Vantassel <jvantassel@tacc.utexas.edu>"
+LABEL maintainer="Gilbert Curbelo <gcurbelo@tacc.utexas.edu>"
 
 USER root
 
@@ -15,11 +15,11 @@ ENV AGAVE_GNAME=G-${AGAVE_GID}
 ENV NB_USER=jupyter
 ENV NB_UID=458981
 ENV HOME=/home/${NB_USER}
-
-# Add jupyter user
-# Adapted from image by Joe S: https://github.com/TACC/jupyterhub_images/blob/master/designsafe/Dockerfile
-RUN groupadd --gid ${AGAVE_GID} ${AGAVE_GNAME} && \
-    adduser --uid ${NB_UID} --ingroup ${AGAVE_GNAME} --home ${HOME} --shell /bin/bash ${NB_USER}
+ENV MPI_DIR=/opt/ompi
+ENV NGL_DB_USER="dspublic"
+ENV NGL_DB_PASSWORD="R3ad0nlY"
+ENV NGL_DB_HOST="129.114.52.174"
+ENV NGL_DB_PORT=3306
 
 WORKDIR ${HOME}
 
@@ -29,87 +29,95 @@ WORKDIR ${HOME}
 
 USER root
 
-# Install bare essentials to make the image usable.
-# This list is kept short on purpose to keep the image light and portable.
-# Future packages should be added only if they are deemed essential for the community.
-# Following best practices apt-get-related commands should not be split.
-RUN apt-get update \
- && apt-get upgrade --yes \
- && apt-get clean --yes \
- && apt-get install --yes --quiet --no-install-recommends \
-    build-essential \
-    emacs-nox \
-    vim-tiny \
-    nano \
-    jed \
-    unzip \
-    git \
-    inkscape \
-    openssh-client \
- && apt-get clean --yes
+RUN apt-get autoclean
 
-RUN touch ${HOME}/.hushlogin
+#### Try to get MPI working
+RUN apt-get -q update \
+    && apt-get install -y \
+    python3 python3-dev python3-pip \
+    gcc gfortran binutils \
+    && pip3 install --upgrade pip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Julia kernel.
-RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.1-linux-x86_64.tar.gz \
- && tar zxf julia-1.7.1-linux-x86_64.tar.gz \
- && mv julia-1.7.1 .julia \
- && export PATH="$PATH:/$HOME/.julia/bin" \
- && echo 'using Pkg; Pkg.add("IJulia");' > install_script.jl \
- && julia install_script.jl \
- && rm install_script.jl \
- && rm julia-1.7.1-linux-x86_64.tar.gz
+ADD https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.4.tar.bz2 .
+RUN tar xf openmpi-3.1.4.tar.bz2 \
+    && cd openmpi-3.1.4 \
+    && ./configure --prefix=${MPI_DIR} \
+    && make -j4 all \
+    && make install \
+    && cd .. && rm -rf \
+    openmpi-3.1.4 openmpi-3.1.4.tar.bz2 /tmp/*
 
-# Install R kernel from pre-built binary.
-RUN apt-get update \
- && apt-get install --yes --quiet --no-install-recommends \
-    curl \
-    gdebi-core \
- && export R_VERSION=4.0.5 \
- && curl -O https://cdn.rstudio.com/r/ubuntu-2004/pkgs/r-${R_VERSION}_1_amd64.deb \
- && gdebi --non-interactive --quiet r-${R_VERSION}_1_amd64.deb\
- && /opt/R/${R_VERSION}/bin/R --version \
- && ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R \
- && ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript \
- && apt-get install --yes --quiet --no-install-recommends \
-    libzmq3-dev \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    jupyter-core \
-    jupyter-client \
- && echo "install.packages(c('repr', 'IRdisplay', 'IRkernel'), type = 'source', repos = 'http://cran.us.r-project.org');IRkernel::installspec(user = FALSE)" > install_script.r \
- && Rscript install_script.r \
- && jupyter labextension install @techrah/text-shortcuts \
- && rm install_script.r \
- && rm r-4.0.5_1_amd64.deb
+RUN apt update \
+    && apt-get install -y libopenmpi-dev
+
+RUN pip3 install --user -U setuptools \
+    && pip3 install --user mpi4py
+
+######
+
+USER root
 
 # Python requirements.
 COPY requirements.txt ${HOME}/.python/requirements.txt
 RUN conda install -y nb_conda_kernels && \
     python -m pip install -r ${HOME}/.python/requirements.txt --no-cache-dir && \
-    python -m pip freeze > ${HOME}/.python/pip_freeze.txt && \
-    jupyter kernelspec uninstall python3 -y
+    python -m pip freeze > ${HOME}/.python/pip_freeze.txt
 
 COPY jupyter_notebook_config.py ${HOME}/.jupyter/jupyter_notebook_config.py
 
-# The notebook is run by the TACC userid, not jupyter,
-# so permissions need to be open
-# TODO (jpv): Prevent blind application of permission.
 RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
-	 chmod 777 ${HOME} && \
-	 find ${HOME} -type f -exec chmod 666 {} \; && \
-	 find ${HOME} -type d -exec chmod 777 {} \; && \
-    chmod -R a+rwx $HOME/.julia && \
-    chmod -R a+rwx /opt/R && \
-    chmod -R a+rwx /opt/conda
+        chmod 777 ${HOME} && \
+        find ${HOME} -type f -exec chmod 666 {} \; && \
+        find ${HOME} -type d -exec chmod 777 {} \;
 
-# Cannot delete default user jovyan.
-# If jovyan is deleted container will not run.
-# Why this is the case is unclear.
-# RUN userdel -rf jovyan
+#RUN python -m pip install keplergl
+#RUN pip install matlab_kernel
+RUN python -m matlab_kernel install --user
+#RUN python -m pip install jupyter-matlab-proxy
+RUN apt-get update && apt-get -y install m4
 
-# Instead delete jovyan's home directory.
-#RUN rm -rf home/jovyan
+ARG MATLAB_RELEASE=r2023a
+ARG MATLAB_PRODUCT_LIST="MATLAB"
+ARG MATLAB_DEPS_REQUIREMENTS_FILE="https://raw.githubusercontent.com/mathworks-ref-arch/container-images/main/matlab-deps/${MATLAB_RELEASE}/ubuntu20.04/base-dependencies.txt"
+ARG MATLAB_DEPS_REQUIREMENTS_FILE_NAME="matlab-deps-${MATLAB_RELEASE}-base-dependencies.txt"
+
+RUN wget ${MATLAB_DEPS_REQUIREMENTS_FILE} -O ${MATLAB_DEPS_REQUIREMENTS_FILE_NAME} \
+    && export DEBIAN_FRONTEND=noninteractive && apt-get update \
+    && xargs -a ${MATLAB_DEPS_REQUIREMENTS_FILE_NAME} -r apt-get install --no-install-recommends -y \
+    wget \
+    unzip \
+    ca-certificates \
+    xvfb \
+    && apt-get clean \
+    && apt-get -y autoremove \
+    && rm -rf /var/lib/apt/lists/* ${MATLAB_DEPS_REQUIREMENTS_FILE_NAME}
+
+# Run mpm to install MATLAB in the target location and delete the mpm installation afterwards
+RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm && \ 
+    chmod +x mpm && \
+    ./mpm install \
+    --release=${MATLAB_RELEASE} \
+    --destination=/opt/matlab \
+    --products ${MATLAB_PRODUCT_LIST} && \
+    rm -f mpm /tmp/mathworks_root.log && \
+    ln -s /opt/matlab/bin/matlab /usr/local/bin/matlab
+
+# Install patched glibc - See https://github.com/mathworks/build-glibc-bz-19329-patch
+WORKDIR /packages
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && apt-get clean && apt-get autoremove && \
+    wget -q https://github.com/mathworks/build-glibc-bz-19329-patch/releases/download/ubuntu-focal/all-packages.tar.gz && \
+    tar -x -f all-packages.tar.gz \
+    --exclude glibc-*.deb \
+    --exclude libc6-dbg*.deb && \
+    apt-get install --yes --no-install-recommends --allow-downgrades ./*.deb && \
+    rm -fr /packages
+
+WORKDIR ${HOME}
+
+# RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager keplergl-jupyter
 
 # Always terinate with user (i.e., non-root) permissions.
 USER ${NB_USER}
