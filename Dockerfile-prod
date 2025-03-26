@@ -1,0 +1,94 @@
+FROM taccsciapps/ds-nb-img:base-0.1.5
+
+USER root
+
+ENV NB_USER=jupyter
+ENV HOME=/home/jupyter
+
+RUN pip uninstall --yes agavepy
+
+RUN python -m pip install tapipy
+RUN apt-get update \
+    && apt-get -y install git \
+    && apt-get -y install rsync
+
+#RUN echo 'clone'
+
+#RUN git clone https://github.com/tapis-project/tapisv3-cli.git
+
+#RUN /home/jupyter/tapisv3-cli/install && source /home/jupyter/.bashrc
+
+WORKDIR ${HOME}
+
+#RUN rm -r tapisv3-cli
+
+#RUN echo 'alias tapis="/home/jupyter/tapis/v3/src/tapis.sh"' >> /home/jupyter/.bashrc
+
+RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
+    chmod 777 ${HOME} && \
+    chmod 777 -R ${HOME}/.conda && \
+    find ${HOME} -type f -exec chmod 666 {} \; && \
+    find ${HOME} -type d -exec chmod 777 {} \;
+
+#RUN chmod 777 ${HOME}/tapis/v3/src/tapis.sh
+
+RUN apt-get install -y libopenmpi-dev \
+    && apt-get install -y libscalapack-openmpi2.1 \ 
+    && apt-get install -y libscalapack-openmpi-dev
+
+# Add lme4 package
+RUN R -e "install.packages('lme4',repos='http://r-forge.r-project.org')"
+
+# RUN pip install pylauncher
+
+# RUN apt-get install -y curl
+
+# RUN mkdir ${HOME}/.pylauncher
+# WORKDIR ${HOME}/.pylauncher
+
+# # Download the pylauncher files
+# RUN curl -L -o pylauncher.py https://raw.githubusercontent.com/TACC/pylauncher/refs/heads/master/src/pylauncher/pylauncher.py && \
+#     curl -L -o hostlist3.py https://raw.githubusercontent.com/TACC/pylauncher/refs/heads/master/src/pylauncher/hostlist3.py
+
+# ENV PYTHONPATH="${HOME}/.pylauncher/pylauncher.py"
+# ENV PYTHONPATH="${PYTHONPATH}:${HOME}/.pylauncher/hostlist3.py"
+
+# RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME}/.pylauncher && \
+#     chmod 777 -R ${HOME}/.pylauncher
+
+# WORKDIR ${HOME}
+
+RUN pip install --upgrade pip
+
+RUN chmod +x ${HOME}/.julia/bin/julia
+
+# Get OpenSees setup
+ENV OPENSEES_DIR=${HOME}/.OpenSees
+RUN mkdir ${HOME}/.OpenSees
+COPY --from=taccaci/opensees:3.7.1 /usr/local/bin/OpenSees ${OPENSEES_DIR}/OpenSees
+COPY --from=taccaci/opensees:3.7.1 /usr/local/bin/OpenSeesSP ${OPENSEES_DIR}/OpenSeesSP
+COPY --from=taccaci/opensees:3.7.1 /usr/local/bin/OpenSeesMP ${OPENSEES_DIR}/OpenSeesMP
+COPY --from=taccaci/opensees:3.7.1 /usr/local/lib/tcl8.6/init.tcl /home/lib/tcl8.6/
+
+ENV PATH=${OPENSEES_DIR}:$PATH
+
+RUN chown -R ${NB_USER}:${NB_GROUP}  ${OPENSEES_DIR} && \
+    chmod 777 -R ${OPENSEES_DIR}
+
+# Enable kernelutility
+RUN chmod +x ${HOME}/.conda/environments.txt
+
+# Add user to /etc/passwd
+# RUN echo "$HUB_USER:x:$HUB_UID:$HUB_GID::/home/jupyter:/bin/bash" >> /etc/passwd
+# RUN echo "gcurbelo:x:858317:813915::/home/jupyter:/bin/bash" >> /etc/passwd
+
+# RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
+# RUN apt-get install -y nodejs
+# RUN node -v
+# RUN npm install
+
+# RUN pip install --upgrade "jupyterlab<4" jupyterlab-git jupyterlab_github
+# RUN jupyter server extension enable --py jupyterlab_git jupyterlab_github
+# RUN jupyter lab build
+
+USER ${NB_USER}
