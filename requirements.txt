@@ -2,13 +2,12 @@ numpy
 scipy
 matplotlib
 pandas
-agavepy==1.0.0a11
+tapipy
 tapis-cli==1.0.6
 ipywidgets
 keplergl
-matlab_kernel
-jupyter-matlab-proxy
+# jupyter-matlab-proxy==0.11.0
 papermill
-dapi
-jupyter_contrib_nbextensions
 nbformat==5.2.0
+tapipy
+kernelutility

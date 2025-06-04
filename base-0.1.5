@@ -68,9 +68,9 @@ RUN conda install -y nb_conda_kernels && \
 COPY jupyter_notebook_config.py ${HOME}/.jupyter/jupyter_notebook_config.py
 
 RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
-        chmod 777 ${HOME} && \
-        find ${HOME} -type f -exec chmod 666 {} \; && \
-        find ${HOME} -type d -exec chmod 777 {} \;
+    chmod 777 ${HOME} && \
+    find ${HOME} -type f -exec chmod 666 {} \; && \
+    find ${HOME} -type d -exec chmod 777 {} \;
 
 #RUN python -m pip install keplergl
 #RUN pip install matlab_kernel
@@ -119,5 +119,5 @@ WORKDIR ${HOME}
 
 # RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager keplergl-jupyter
 
-# Always terinate with user (i.e., non-root) permissions.
+# Always terminate with user (i.e., non-root) permissions.
 USER ${NB_USER}

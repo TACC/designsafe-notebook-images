@@ -16,7 +16,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NB_GNAME=G-${NB_GID} \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_VERSION=1.8.4
+    POETRY_VERSION=1.8.4 \
+    MPI_DIR=/opt/ompi
 
 # Create user and home directory
 RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && \
@@ -39,7 +40,8 @@ WORKDIR ${HOME}
 
 COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt
+    pip install -r requirements.txt && \
+    rm requirements.txt
 
 # Install R kernel
 RUN R -e "install.packages('IRkernel', repos='https://cloud.r-project.org')" && \
@@ -62,33 +64,77 @@ RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-${JULIA_VER
     rm julia-${JULIA_VERSION}-linux-x86_64.tar.gz
 
 # Install MATLAB Kernel
-ARG MATLAB_RELEASE=r2023a
+ARG MATLAB_RELEASE=R2024b
 ARG MATLAB_PRODUCT_LIST="MATLAB"
-ARG MATLAB_DEPS_REQUIREMENTS_FILE="https://raw.githubusercontent.com/mathworks-ref-arch/container-images/main/matlab-deps/${MATLAB_RELEASE}/ubuntu20.04/base-dependencies.txt"
-ARG MATLAB_DEPS_REQUIREMENTS_FILE_NAME="matlab-deps-${MATLAB_RELEASE}-base-dependencies.txt"
+ARG MATLAB_INSTALL_LOCATION="/opt/matlab"
+ARG UBUNTU_VERSION=24.04
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN wget ${MATLAB_DEPS_REQUIREMENTS_FILE} -O ${MATLAB_DEPS_REQUIREMENTS_FILE_NAME} \
-    && export DEBIAN_FRONTEND=noninteractive && apt-get update \
-    && xargs -a ${MATLAB_DEPS_REQUIREMENTS_FILE_NAME} -r apt-get install --no-install-recommends -y \
-    unzip \
-    xvfb \
+ARG MATLAB_DEPS_URL="https://raw.githubusercontent.com/mathworks-ref-arch/container-images/main/matlab-deps/${MATLAB_RELEASE}/ubuntu${UBUNTU_VERSION}/base-dependencies.txt"
+ARG MATLAB_DEPENDENCIES="matlab-deps-${MATLAB_RELEASE}-base-dependencies.txt"
+ARG ADDITIONAL_PACKAGES="wget curl unzip ca-certificates xvfb git vim"
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update \
+    && apt-get install --no-install-recommends -y ${ADDITIONAL_PACKAGES}\
+    && wget $(echo ${MATLAB_DEPS_URL} | tr "[:upper:]" "[:lower:]") -O ${MATLAB_DEPENDENCIES} \
+    && xargs -a ${MATLAB_DEPENDENCIES} -r apt-get install --no-install-recommends -y \
     && apt-get clean \
     && apt-get -y autoremove \
-    && rm -rf /var/lib/apt/lists/* ${MATLAB_DEPS_REQUIREMENTS_FILE_NAME}
+    && rm -rf /var/lib/apt/lists/* ${MATLAB_DEPENDENCIES}
 
-# Run mpm to install MATLAB in the target location and delete the mpm installation afterwards
-RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm && \ 
-    chmod +x mpm && \
-    ./mpm install \
-    --release=${MATLAB_RELEASE} \
-    --destination=/opt/matlab \
-    --products ${MATLAB_PRODUCT_LIST} && \
-    rm -f mpm /tmp/mathworks_root.log && \
-    ln -s /opt/matlab/bin/matlab /usr/local/bin/matlab
+RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm && \
+    chmod +x mpm \
+    && ./mpm install --release=${MATLAB_RELEASE} --destination=${MATLAB_INSTALL_LOCATION} \
+    --products ${MATLAB_PRODUCT_LIST} \
+    || (echo "MPM Installation Failure. See below for more information:" && cat /tmp/mathworks_root.log && false)\
+    && rm -f mpm /tmp/mathworks_root.log \
+    && ln -s ${MATLAB_INSTALL_LOCATION}/bin/matlab /usr/local/bin/matlab
 
-RUN pip install kernelutility
+RUN MATLAB_VERSION=$(cat ${MATLAB_INSTALL_LOCATION}/VersionInfo.xml | grep -oP '(\d{2}\.\d{1})') && \
+    env LD_LIBRARY_PATH=${MATLAB_INSTALL_LOCATION}/bin/glnxa64 python -m pip install -U matlabengine==${MATLAB_VERSION}.* || \
+    echo "Failed to install MATLAB Engine for Python... skipping ..."
+
+RUN python -m pip install -U jupyter-matlab-proxy
+
+RUN pip install matlab_kernel && \
+    python -m matlab_kernel install --user
+
+#### Try to get MPI working
+RUN apt-get -q update \
+    && apt-get install -y \
+    python3 python3-dev python3-pip \
+    gcc gfortran binutils \
+    && pip3 install --upgrade pip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ADD https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.4.tar.bz2 .
+RUN tar xf openmpi-3.1.4.tar.bz2 \
+    && cd openmpi-3.1.4 \
+    && ./configure --prefix=${MPI_DIR} \
+    && make -j4 all \
+    && make install \
+    && cd .. && rm -rf \
+    openmpi-3.1.4 openmpi-3.1.4.tar.bz2 /tmp/*
+
+RUN apt update \
+    && apt-get install -y libopenmpi-dev
+
+RUN pip3 install --user -U setuptools \
+    && pip3 install --user mpi4py
+
+# WORKDIR /packages
+# RUN export DEBIAN_FRONTEND=noninteractive && \
+#     apt-get update && apt-get clean && apt-get autoremove && \
+#     wget -q https://github.com/mathworks/build-glibc-bz-19329-patch/releases/download/ubuntu-focal/all-packages.tar.gz && \
+#     tar -x -f all-packages.tar.gz \
+#     --exclude glibc-*.deb \
+#     --exclude libc6-dbg*.deb && \
+#     apt-get install --yes --no-install-recommends --allow-downgrades ./*.deb && \
+#     rm -fr /packages
+
+WORKDIR ${HOME}
+
 RUN mkdir /opt/conda
 RUN mkdir /opt/R
 
@@ -99,6 +145,8 @@ RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
     chmod -R a+rwx $HOME/.julia && \
     chmod -R a+rwx /opt/R && \
     chmod -R a+rwx /opt/conda
+
+WORKDIR ${HOME}
 
 # Switch to the user
 USER $NB_USER
