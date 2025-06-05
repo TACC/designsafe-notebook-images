@@ -3,7 +3,7 @@
 FROM taccsciapps/ds-nb-img:base-0.1.0
 
 # Image metadata.
-ENV IMAGE_NAME="ds-nb-img:base-0.1.5"
+ENV IMAGE_NAME="ds-nb-img:base-0.2.3"
 LABEL image_name="taccsciapps/${IMAGE_NAME}"
 LABEL image_name_alt="taccsciapps/${IMAGE_NAME}"
 LABEL maintainer="Gilbert Curbelo <gcurbelo@tacc.utexas.edu>"
@@ -16,9 +16,9 @@ ENV NB_USER=jupyter
 ENV NB_UID=458981
 ENV HOME=/home/${NB_USER}
 ENV MPI_DIR=/opt/ompi
-ENV NGL_DB_USER="dspublic"
-ENV NGL_DB_PASSWORD="R3ad0nlY"
-ENV NGL_DB_HOST="129.114.52.174"
+ENV NGL_DB_USER=""
+ENV NGL_DB_PASSWORD=""
+ENV NGL_DB_HOST=""
 ENV NGL_DB_PORT=3306
 
 WORKDIR ${HOME}

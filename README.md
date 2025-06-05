@@ -5,6 +5,8 @@
 This repository includes the DesignSafe-Cyberinfrastructure's Jupyter notebook images deployed
 via the site's JupyterHub.
 
+
+
 ## Useful Syntax
 
 ### Build
@@ -13,7 +15,7 @@ via the site's JupyterHub.
 docker build . -t <user>/<repo>:<tag>
 
 # for example
-docker build . -t jpvantassel/ds-nb-img:base-0.1.0
+docker build . -t gcurbelo/ds-nb-img:base-0.1.0
 ```
 
 ### Push
@@ -22,7 +24,7 @@ docker build . -t jpvantassel/ds-nb-img:base-0.1.0
 docker push <user>/<repo>:<tag>
 
 # for example
-docker push jpvantassel/ds-nb-img:base-0.1.0
+docker push gcurbelo/ds-nb-img:base-0.1.0
 ```
 
 ### Run
@@ -33,7 +35,7 @@ docker push jpvantassel/ds-nb-img:base-0.1.0
 docker run --rm -p 8888:8888 --user=jovyan -e JUPYTER_ENABLE_LAB=yes <user>/<repo>:<tag>
 
 # for example
-docker run --rm -p 8888:8888 --user=1824 -e JUPYTER_ENABLE_LAB jpvantassel/ds-nb-img:base-0.1.0
+docker run --rm -p 8888:8888 --user=1824 -e JUPYTER_ENABLE_LAB gcurbelo/ds-nb-img:base-0.1.0
 ``` 
 
 ## Notes
@@ -42,5 +44,3 @@ docker run --rm -p 8888:8888 --user=1824 -e JUPYTER_ENABLE_LAB jpvantassel/ds-nb
 - [portal-agave-templates](https://bitbucket.org/taccaci/portal-agave-templates/src/master/)
 - [designsafe-docker-gitlab](https://gitlab.tacc.utexas.edu/cic/jupyter/-/blob/master/notebooks/tenants/designsafe/Dockerfile)
 - [running jupyter container](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/running.html#using-jupyterhub)
-- [jpvantassel dockerhub](https://hub.docker.com/repository/docker/jpvantassel/)
-- [admin portal](https://designsafe-dev-admin.io.jupyter.tacc.cloud/)

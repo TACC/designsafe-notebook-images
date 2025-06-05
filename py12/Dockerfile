@@ -1,6 +1,11 @@
-FROM python:3.12.10-slim
+# 24.04 ships with Python 3.12
+ARG UBUNTU_VERSION=24.04
+
+FROM quay.io/jupyter/base-notebook:ubuntu-${UBUNTU_VERSION} AS base1
 
 USER root
+
+
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -82,13 +87,13 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update \
     && apt-get -y autoremove \
     && rm -rf /var/lib/apt/lists/* ${MATLAB_DEPENDENCIES}
 
-RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm && \
-    chmod +x mpm \
-    && ./mpm install --release=${MATLAB_RELEASE} --destination=${MATLAB_INSTALL_LOCATION} \
+RUN curl -fsSL https://www.mathworks.com/mpm/glnxa64/mpm -o mpm && \
+    chmod +x mpm && \
+    ./mpm install --release=${MATLAB_RELEASE} --destination=${MATLAB_INSTALL_LOCATION} \
     --products ${MATLAB_PRODUCT_LIST} \
-    || (echo "MPM Installation Failure. See below for more information:" && cat /tmp/mathworks_root.log && false)\
-    && rm -f mpm /tmp/mathworks_root.log \
-    && ln -s ${MATLAB_INSTALL_LOCATION}/bin/matlab /usr/local/bin/matlab
+    || (echo "MPM Installation Failure. See below for more information:" && cat /tmp/mathworks_root.log && false) && \
+    rm -f mpm /tmp/mathworks_root.log && \
+    ln -s ${MATLAB_INSTALL_LOCATION}/bin/matlab /usr/local/bin/matlab
 
 RUN MATLAB_VERSION=$(cat ${MATLAB_INSTALL_LOCATION}/VersionInfo.xml | grep -oP '(\d{2}\.\d{1})') && \
     env LD_LIBRARY_PATH=${MATLAB_INSTALL_LOCATION}/bin/glnxa64 python -m pip install -U matlabengine==${MATLAB_VERSION}.* || \
@@ -123,21 +128,30 @@ RUN apt update \
 RUN pip3 install --user -U setuptools \
     && pip3 install --user mpi4py
 
-# WORKDIR /packages
-# RUN export DEBIAN_FRONTEND=noninteractive && \
-#     apt-get update && apt-get clean && apt-get autoremove && \
-#     wget -q https://github.com/mathworks/build-glibc-bz-19329-patch/releases/download/ubuntu-focal/all-packages.tar.gz && \
-#     tar -x -f all-packages.tar.gz \
-#     --exclude glibc-*.deb \
-#     --exclude libc6-dbg*.deb && \
-#     apt-get install --yes --no-install-recommends --allow-downgrades ./*.deb && \
-#     rm -fr /packages
-
 WORKDIR ${HOME}
 
-RUN mkdir /opt/conda
 RUN mkdir /opt/R
 
+# OpenSees Executable
+RUN pip install openseespy
+COPY --from=taccaci/opensees:latest /usr/local/bin/OpenSees /usr/local/bin/OpenSees
+COPY --from=taccaci/opensees:latest /usr/local/bin/OpenSeesSP /usr/local/bin/OpenSeesSP
+COPY --from=taccaci/opensees:latest /usr/local/bin/OpenSeesMP /usr/local/bin/OpenSeesMP
+
+COPY --from=taccaci/opensees:latest /usr/local/lib/tcl8.6 /usr/local/lib/tcl8.6
+
+# Add SQLite3, PyMySQL, and SQLAlchemy
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libsqlite3-dev \
+    sqlite3 \
+    libmariadb-dev \
+    && pip install --no-cache-dir PyMySQL \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir SQLAlchemy
+
+# Fix permissions
 RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
 	chmod 777 ${HOME} && \
 	find ${HOME} -type f -exec chmod 666 {} \; && \
@@ -146,10 +160,8 @@ RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \
     chmod -R a+rwx /opt/R && \
     chmod -R a+rwx /opt/conda
 
-WORKDIR ${HOME}
-
 # Switch to the user
 USER $NB_USER
 
 # Set the entrypoint for JupyterHub
-# CMD ["poetry", "run", "jupyterhub-singleuser"]
+# CMD ["jupyterhub-singleuser"]
