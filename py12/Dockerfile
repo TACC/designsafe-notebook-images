@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NB_UID=458981 \
     NB_PREFIX=/ \
     NGL_DB_USER="dspublic" \
-    NGL_DB_PASSWORD="R3ad0nlY" \ 
+    NGL_DB_PASSWORD="" \ 
     NGL_DB_HOST="129.114.52.174" \
     NGL_DB_PORT=3306 \
     NB_GID=816877 \
@@ -28,7 +28,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && \
     groupadd --gid ${NB_GID} ${NB_GNAME}
 
-# Install dependencies
+# Install dependencies (include Node.js for keplergl build)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
@@ -39,14 +39,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzmq3-dev \
     libcurl4-openssl-dev \
     libssl-dev \
+    wget \
+    gnupg \
+    lsb-release \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://apache.jfrog.io/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb && \
+    apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb && \
+    apt-get update && \
+    apt-get install -y \
+    cmake \
+    libarrow-dev \
+    libparquet-dev && \
+    rm ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 
 WORKDIR ${HOME}
 
+# Ensure setuptools is installed first (provides pkg_resources)
+RUN pip install --upgrade pip setuptools wheel
+RUN apt-get install python3-setuptools
+
+RUN pip install "Cython>=0.29.34"
+
 COPY requirements.txt .
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt && \
+RUN pip install -r requirements.txt && \
     rm requirements.txt
+
+RUN pip install --no-cache-dir keplergl || echo "keplergl skipped"
+
 
 # Install R kernel
 RUN R -e "install.packages('IRkernel', repos='https://cloud.r-project.org')" && \
@@ -146,10 +168,18 @@ RUN apt-get update && \
     libsqlite3-dev \
     sqlite3 \
     libmariadb-dev \
+    libscalapack-openmpi-dev \
     && pip install --no-cache-dir PyMySQL \
+    && cd /usr/lib/x86_64-linux-gnu/ \
+    && ln -s libscalapack-openmpi.so.2.2.1 libscalapack-openmpi.so.2.1 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH 
 RUN pip install --no-cache-dir SQLAlchemy
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends texlive-full && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Fix permissions
 RUN chown -R ${NB_USER}:${NB_GROUP} ${HOME} && \

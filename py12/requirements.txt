@@ -1,3 +1,4 @@
+setuptools
 numpy
 scipy
 matplotlib
@@ -5,14 +6,6 @@ pandas
 tapipy
 tapis-cli
 ipywidgets
-keplergl
+# keplergl
 papermill
 nbformat
-
-jupyterhub
-notebook
-jupyterlab
-jupyter-server
-jupyter-client
-ipykernel
-imatlab

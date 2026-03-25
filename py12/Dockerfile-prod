@@ -1,0 +1,19 @@
+FROM taccsciapps/ds-nb-img:base-1.0.1
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    texlive-full \
+    dvipng \
+    ghostscript \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /home/$NB_USER/.config/matplotlib && \
+    echo "text.usetex: True" >> /home/$NB_USER/.config/matplotlib/matplotlibrc && \
+    echo "font.family: serif" >> /home/$NB_USER/.config/matplotlib/matplotlibrc
+
+RUN chmod -R a+rwx $HOME/.config/matplotlib
+
+USER $NB_USER

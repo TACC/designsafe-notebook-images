@@ -1,5 +1,5 @@
 numpy==1.26.4
-scipy==1.11.3
+scipy==1.16.2
 matplotlib==3.7.2
 pandas==2.2.1
 tapipy==1.8.2
